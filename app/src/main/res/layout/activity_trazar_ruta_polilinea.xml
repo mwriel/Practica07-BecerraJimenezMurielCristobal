@@ -1,34 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-
-
-
-
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MapsActivity" />
-
-    -->
-
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#00101F6E"
-    tools:context=".MapsActivity">
+    tools:context=".TrazarRutaPolilineaActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="120dp"
-        android:background="#2b2628"
         android:gravity="center"
         android:orientation="horizontal"
+        android:background="#2b2628"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -85,16 +68,14 @@
         android:layout_marginTop="120dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:context=".MapsActivity"
+        tools:context=".TrazarRutaPolilineaActivity"
         tools:layout="@android:layout/activity_list_item" />
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="16dp"
         android:orientation="vertical"
+        android:layout_gravity="bottom|end"
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -123,4 +104,5 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
