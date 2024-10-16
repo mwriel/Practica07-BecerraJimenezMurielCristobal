@@ -32,6 +32,9 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
 
     private var marker: Marker? = null
 
+    private var selectedLocation: LatLng? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMapsBinding.inflate(layoutInflater)
@@ -134,7 +137,6 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
             mFusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
                     val currentLocation = LatLng(location.latitude, location.longitude)
-                    val markersFromJson = getMarkersFromJson()
 
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 12f))
 
@@ -142,13 +144,22 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
                         .geodesic(true)
                         .color(Color.RED)
                         .width(5f)
-                        .add(currentLocation)
-                        .addAll(markersFromJson)
+                        .add(currentLocation) // Añadir la ubicación actual
+
+                    if (selectedLocation != null) {
+                        // Añadir la ubicación seleccionada a la polilínea
+                        polylineOptions.add(selectedLocation)
+                    }
+
+                    // Añadir otros puntos de referencia (markers)
+                    polylineOptions.addAll(getMarkersFromJson())
 
                     mMap.addPolyline(polylineOptions)
 
-                    val tlaquepaqueCentro = LatLng(20.64047, -103.31154)
-                    mMap.addMarker(MarkerOptions().position(tlaquepaqueCentro).title("Tlaquepaque Centro").snippet("Fin de la ruta"))
+                    // Mover la cámara y añadir un marcador en la ubicación seleccionada
+                    if (selectedLocation != null) {
+                        mMap.addMarker(MarkerOptions().position(selectedLocation!!).title("Ubicación seleccionada"))
+                    }
                 }
             }
         }
@@ -163,10 +174,19 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
         )
     }
 
+
     override fun onMapClick(latLng: LatLng) {
         marker?.remove()
         marker = mMap.addMarker(MarkerOptions().position(latLng).title("Ubicación seleccionada"))
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+
+        // Guarda las coordenadas seleccionadas
+        selectedLocation = latLng
+
+        //showPolylines()
+
+        // Aquí puedes imprimir o utilizar las coordenadas
+        Log.d("MAP_CLICK", "Coordenadas seleccionadas: ${latLng.latitude}, ${latLng.longitude}")
     }
 
     private fun openGoogleMaps() {
