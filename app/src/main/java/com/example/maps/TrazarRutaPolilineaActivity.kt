@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.content.Context
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -19,6 +20,13 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.LatLng
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
+import java.net.URLEncoder
+import okhttp3.ResponseBody
+import okhttp3.Response
 
 class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, GoogleMap.OnMapClickListener {
 
@@ -124,6 +132,9 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
     @SuppressLint("SuspiciousIndentation")
     private fun showPolylines() {
         if (::mMap.isInitialized) {
+            // Limpiar polilíneas y marcadores previos
+            mMap.clear()
+
             if (ActivityCompat.checkSelfPermission(
                     this,
                     Manifest.permission.ACCESS_FINE_LOCATION
@@ -134,36 +145,47 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
             ) {
                 return
             }
+
             mFusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
                     val currentLocation = LatLng(location.latitude, location.longitude)
 
+                    // Mover la cámara a la ubicación actual
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 12f))
 
+                    // Configurar opciones de la polilínea
                     val polylineOptions = PolylineOptions()
                         .geodesic(true)
                         .color(Color.RED)
                         .width(5f)
-                        .add(currentLocation) // Añadir la ubicación actual
+                        .add(currentLocation) // Añadir la ubicación actual como punto inicial
 
                     if (selectedLocation != null) {
-                        // Añadir la ubicación seleccionada a la polilínea
+                        // Añadir la ubicación seleccionada como punto final
                         polylineOptions.add(selectedLocation)
-                    }
 
-                    // Añadir otros puntos de referencia (markers)
-                    polylineOptions.addAll(getMarkersFromJson())
-
-                    mMap.addPolyline(polylineOptions)
-
-                    // Mover la cámara y añadir un marcador en la ubicación seleccionada
-                    if (selectedLocation != null) {
+                        // Añadir marcador en la ubicación seleccionada
                         mMap.addMarker(MarkerOptions().position(selectedLocation!!).title("Ubicación seleccionada"))
                     }
+
+                    // Dibujar la polilínea en el mapa
+                    mMap.addPolyline(polylineOptions)
+
+                    // (Opcional) Puedes mover la cámara para mostrar ambos puntos
+                    if (selectedLocation != null) {
+                        val boundsBuilder = LatLngBounds.Builder()
+                        boundsBuilder.include(currentLocation)
+                        boundsBuilder.include(selectedLocation!!)
+
+                        val bounds = boundsBuilder.build()
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))
+                    }
                 }
+
             }
         }
     }
+
 
     private fun getMarkersFromJson(): List<LatLng> {
         return listOf(
@@ -213,4 +235,55 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
             }
         }
     }
+
+
+    //---------------------------
+
+
+
+
+
+    fun getPolylineFromDirections(context: Context, origin: LatLng, destination: LatLng): String? {
+        // Obtener la clave de API desde strings.xml
+        val apiKey = context.getString(R.string.apikey)
+
+        // Construir la URL para la solicitud Directions API usando LatLng
+        val originParam = "${origin.latitude},${origin.longitude}"
+        val destinationParam = "${destination.latitude},${destination.longitude}"
+        val url = "https://maps.googleapis.com/maps/api/directions/json?origin=$originParam&destination=$destinationParam&key=$apiKey"
+
+        // Inicializa OkHttpClient
+        val client = OkHttpClient()
+
+        // Crea la solicitud HTTP GET
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        // Ejecuta la solicitud y obtiene la respuesta
+        val response: Response = client.newCall(request).execute()
+        return if (response.isSuccessful) {
+            val responseBody = response.body?.string()
+            if (responseBody != null) {
+                // Parsear el JSON
+                val jsonObject = JSONObject(responseBody)
+                val routes = jsonObject.getJSONArray("routes")
+
+                // Verifica si hay rutas disponibles
+                if (routes.length() > 0) {
+                    val overviewPolyline = routes.getJSONObject(0).getJSONObject("overview_polyline")
+                    overviewPolyline.getString("points") // Regresa los puntos de la polilínea
+                } else {
+                    null // No hay rutas disponibles
+                }
+            } else {
+                null // No se pudo obtener el cuerpo de la respuesta
+            }
+        } else {
+            null // Respuesta no exitosa
+        }
+    }
+
+
+
 }

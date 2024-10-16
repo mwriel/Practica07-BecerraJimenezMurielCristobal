@@ -47,6 +47,22 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("com.google.android.gms:play-services-maps:18.1.0")
 
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+
+
+
+// Networking
+    implementation ("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
+
+// JSON parsing
+    implementation ("org.json:json:20210307")
+
+
+
+
+
 
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
