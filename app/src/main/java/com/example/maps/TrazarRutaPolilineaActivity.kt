@@ -27,6 +27,11 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import okhttp3.ResponseBody
 import okhttp3.Response
+import com.google.maps.DirectionsApi
+import com.google.maps.GeoApiContext
+import com.google.maps.model.DirectionsResult
+import com.google.maps.model.DirectionsRoute
+import com.google.maps.model.EncodedPolyline
 
 class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, GoogleMap.OnMapClickListener {
 
@@ -108,6 +113,63 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
         }
     }
 
+    @SuppressLint("SuspiciousIndentation")
+    private fun showPolylines() {
+        val apikey=this.getString(R.string.apikey)
+        if (::mMap.isInitialized) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+            mFusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val currentLocation = LatLng(location.latitude, location.longitude)
+                    val destination = if (selectedLocation!=null)selectedLocation else LatLng(20.67599778054562, -103.37891959070663) // Tlaquepaque Centro
+
+                    // Inicializar el GeoApiContext
+                    val context = GeoApiContext.Builder()
+                        .apiKey(apikey) // Reemplaza con tu clave API real
+                        .build()
+
+                    // Hacer la solicitud a la API de Directions
+                    val result: DirectionsResult = DirectionsApi.newRequest(context)
+                        .origin(com.google.maps.model.LatLng(currentLocation.latitude, currentLocation.longitude))
+                        .destination(com.google.maps.model.LatLng(destination?.latitude ?:20.67599778054562 ,
+                            destination?.longitude ?: -103.37891959070663
+                        ))
+                        .await()
+
+                    // Obtener la ruta
+                    val route: DirectionsRoute = result.routes[0]
+                    val polyline: EncodedPolyline = route.overviewPolyline
+
+                    // Decodificar la polilínea
+                    val points: List<com.google.maps.model.LatLng> = polyline.decodePath()
+                    val latLngList = points.map { LatLng(it.lat, it.lng) }
+
+                    // Dibujar la polilínea en el mapa
+                    val polylineOptions = PolylineOptions()
+                        .geodesic(true)
+                        .color(Color.RED)
+                        .width(5f)
+                        .addAll(latLngList)
+
+                    mMap.addPolyline(polylineOptions)
+
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 12f))
+                    mMap.addMarker(MarkerOptions().position(destination!!).title("Resturante Saam").snippet("Fin de la ruta"))
+                }
+            }
+        }
+    }
+
+
     private fun startLocationUpdates() {
         try {
             mFusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null)
@@ -130,7 +192,7 @@ class TrazarRutaPolilineaActivity : FragmentActivity(), OnMapReadyCallback, Goog
     }
 
     @SuppressLint("SuspiciousIndentation")
-    private fun showPolylines() {
+    private fun showPolylinesD() {
         if (::mMap.isInitialized) {
             // Limpiar polilíneas y marcadores previos
             mMap.clear()
